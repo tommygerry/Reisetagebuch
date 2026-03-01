@@ -29,6 +29,9 @@
         {% if reise.eintraege %}
         &nbsp;|&nbsp; <strong>{{ reise.eintraege | length }}</strong> Tagebucheinträge
         {% endif %}
+        {% if reise.fotos %}
+        &nbsp;|&nbsp; <strong>{{ reise.fotos | length }}</strong> Fotos
+        {% endif %}
       </p>
       {% if reise.beschreibung %}
       <p class="reise-beschreibung">{{ reise.beschreibung }}</p>
@@ -81,12 +84,40 @@
           {% if eintrag.ort %}<span>📍 {{ eintrag.ort }}</span>{% endif %}
           {% if eintrag.wetter %}<span>🌤 {{ eintrag.wetter }}</span>{% endif %}
           {% if eintrag.stimmung %}<span>{{ eintrag.stimmung }}</span>{% endif %}
+          {% if eintrag.fotos %}<span>📷 {{ eintrag.fotos | length }}</span>{% endif %}
         </div>
       </div>
       <div class="eintrag-pfeil">&rarr;</div>
     </a>
     {% endfor %}
   </div>
+  {% endif %}
+
+  {% set etappen_mit_fotos = reise.etappen | selectattr('fotos') | list %}
+  {% if etappen_mit_fotos %}
+  <h2>Fotogalerie</h2>
+  {% for etappe in etappen_mit_fotos %}
+  <div class="galerie-abschnitt">
+    <h3 class="galerie-ort">{{ etappe.ort }}</h3>
+    <div class="foto-gitter">
+      {% for foto in etappe.fotos %}
+      <a href="{{ foto.pfad_relativ }}"
+         class="glightbox foto-kachel"
+         data-gallery="galerie-{{ loop.revindex0 + loop.index }}"
+         data-gallery="galerie-{{ etappe.ort | lower | replace(' ', '-') }}"
+         {% if foto.beschriftung %}data-description="{{ foto.beschriftung }}"{% endif %}
+         title="{{ foto.alt }}">
+        <img src="{{ foto.pfad_relativ }}"
+             alt="{{ foto.alt }}"
+             loading="lazy">
+        {% if foto.beschriftung %}
+        <div class="foto-beschriftung">{{ foto.beschriftung }}</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
   {% endif %}
 
 </div>
@@ -142,5 +173,7 @@
       }
     })
     .catch(err => console.error('GeoJSON konnte nicht geladen werden:', err));
+
+  GLightbox({ selector: '.glightbox' });
 </script>
 {% endblock %}

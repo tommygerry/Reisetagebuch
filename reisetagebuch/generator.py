@@ -30,6 +30,7 @@ def generiere_website(
     tmpl_reise = env.get_template("reise.html")
     tmpl_tag = env.get_template("tag.html")
     eintraege_gesamt = 0
+    fotos_gesamt = 0
 
     for reise in reisen:
         reise_ausgabe = ausgabe_pfad / reise.slug
@@ -71,6 +72,18 @@ def generiere_website(
                 )
                 eintraege_gesamt += 1
 
+        # Fotos kopieren
+        if reise.fotos:
+            fotos_quelle = Path("reisen") / reise.slug / "fotos"
+            fotos_ziel = reise_ausgabe / "fotos"
+            if fotos_quelle.exists():
+                fotos_ziel.mkdir(exist_ok=True)
+                for foto in reise.fotos:
+                    quelle_datei = fotos_quelle / foto.dateiname
+                    if quelle_datei.exists():
+                        shutil.copy2(quelle_datei, fotos_ziel / foto.dateiname)
+                        fotos_gesamt += 1
+
     # Statische Dateien kopieren
     if statisch_pfad.exists():
         ausgabe_statisch = ausgabe_pfad / "statisch"
@@ -78,7 +91,13 @@ def generiere_website(
             shutil.rmtree(ausgabe_statisch)
         shutil.copytree(statisch_pfad, ausgabe_statisch)
 
-    print(f"Generiert: 1 Startseite + {len(reisen)} Reise(n) + {eintraege_gesamt} Tageseintrag/-einträge")
+    teile = [
+        f"1 Startseite",
+        f"{len(reisen)} Reise(n)",
+        f"{eintraege_gesamt} Tageseintrag/-einträge",
+        f"{fotos_gesamt} Foto(s)",
+    ]
+    print(f"Generiert: {', '.join(teile)}")
 
 
 def _reise_zu_geojson(reise: Reise) -> dict:

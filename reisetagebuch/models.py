@@ -17,6 +17,15 @@ class Abreise:
 
 
 @dataclass
+class Foto:
+    dateiname: str              # z.B. "2026-06-01_kolosseum.jpg"
+    pfad_relativ: str           # z.B. "fotos/2026-06-01_kolosseum.jpg" (relativ zur Reise-Ausgabe)
+    datum: date | None = None   # aus Dateinamen-Präfix geparst
+    beschriftung: str = ""
+    alt: str = ""               # Alternativtext; fallback = beschriftung oder dateiname
+
+
+@dataclass
 class Etappe:
     ort: str
     lat: float
@@ -27,6 +36,7 @@ class Etappe:
     unterkunft: str = ""
     verkehrsmittel_weiter: str = ""
     notizen: str = ""
+    fotos: list["Foto"] = field(default_factory=list)   # wird vom Loader befüllt
 
     def __post_init__(self):
         self.abreise = self.ankunft + timedelta(days=self.naechte)
@@ -39,8 +49,9 @@ class Tageseintrag:
     ort: str
     inhalt_html: str           # gerendertes Markdown
     wetter: str = ""
-    stimmung: str = ""         # z.B. "😊", "müde", "aufgeregt"
-    slug: str = ""             # YYYY-MM-DD, wird vom Loader gesetzt
+    stimmung: str = ""
+    slug: str = ""             # YYYY-MM-DD
+    fotos: list[Foto] = field(default_factory=list)   # Fotos dieses Tages
 
 
 @dataclass
@@ -51,8 +62,9 @@ class Reise:
     abreise: Abreise
     etappen: list[Etappe] = field(default_factory=list)
     eintraege: list[Tageseintrag] = field(default_factory=list)
+    fotos: list[Foto] = field(default_factory=list)    # alle Fotos der Reise
     deckbild: str = ""
-    slug: str = ""             # Verzeichnisname, wird vom Loader gesetzt
+    slug: str = ""
 
     @property
     def gesamtnaechte(self) -> int:

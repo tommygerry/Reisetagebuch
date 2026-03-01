@@ -4,11 +4,14 @@ from pathlib import Path
 import markdown
 import yaml
 
-from .models import Anreise, Abreise, Etappe, Reise, Tageseintrag
+from .models import Anreise, Abreise, Etappe, Foto, Reise, Tageseintrag
 
 
 class ValidationFehler(Exception):
     pass
+
+
+_BILD_ENDUNGEN = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"}
 
 
 def _als_datum(wert, feld: str) -> date:
@@ -29,20 +32,7 @@ def _lade_yaml(pfad: Path) -> dict:
 
 
 def _parse_markdown_datei(pfad: Path) -> tuple[dict, str]:
-    """Liest eine Markdown-Datei mit optionalem YAML-Frontmatter.
-
-    Format:
-        ---
-        titel: "Heute in Rom"
-        ort: "Rom"
-        wetter: "sonnig"
-        stimmung: "begeistert"
-        ---
-
-        Markdown-Text hier...
-
-    Gibt (frontmatter_dict, markdown_text) zurück.
-    """
+    """Liest eine Markdown-Datei mit optionalem YAML-Frontmatter."""
     text = pfad.read_text(encoding="utf-8")
     frontmatter: dict = {}
     body = text
@@ -59,6 +49,69 @@ def _parse_markdown_datei(pfad: Path) -> tuple[dict, str]:
     return frontmatter, body
 
 
+def _lade_fotos(verzeichnis: Path) -> list[Foto]:
+    """Lädt alle Fotos aus reisen/<slug>/fotos/ mit optionaler fotos.yaml."""
+    fotos_pfad = verzeichnis / "fotos"
+    if not fotos_pfad.exists():
+        return []
+
+    # Optionale Beschriftungen aus fotos.yaml
+    meta: dict[str, dict] = {}
+    yaml_pfad = fotos_pfad / "fotos.yaml"
+    if yaml_pfad.exists():
+        with yaml_pfad.open(encoding="utf-8") as f:
+            roh = yaml.safe_load(f) or {}
+        for dateiname, werte in roh.items():
+            if isinstance(werte, dict):
+                meta[str(dateiname)] = werte
+            elif isinstance(werte, str):
+                meta[str(dateiname)] = {"beschriftung": werte}
+
+    fotos: list[Foto] = []
+    for datei in sorted(fotos_pfad.iterdir()):
+        if datei.suffix.lower() not in _BILD_ENDUNGEN:
+            continue
+
+        # Datum aus Dateinamen-Präfix extrahieren (YYYY-MM-DD_…)
+        datum: date | None = None
+        if len(datei.stem) >= 10 and datei.stem[4] == "-" and datei.stem[7] == "-":
+            try:
+                datum = date.fromisoformat(datei.stem[:10])
+            except ValueError:
+                pass
+
+        info = meta.get(datei.name, {})
+        beschriftung = str(info.get("beschriftung", ""))
+        alt = str(info.get("alt", beschriftung or datei.stem.replace("-", " ").replace("_", " ")))
+
+        fotos.append(Foto(
+            dateiname=datei.name,
+            pfad_relativ=f"fotos/{datei.name}",
+            datum=datum,
+            beschriftung=beschriftung,
+            alt=alt,
+        ))
+
+    return fotos
+
+
+def _zuordnen_fotos(fotos: list[Foto], etappen: list[Etappe], eintraege: list[Tageseintrag]) -> None:
+    """Weist Fotos (in-place) den passenden Etappen und Tageseinträgen zu."""
+    for foto in fotos:
+        if foto.datum is None:
+            continue
+        # Etappe: ankunft <= foto.datum < abreise
+        for etappe in etappen:
+            if etappe.ankunft <= foto.datum < etappe.abreise:
+                etappe.fotos.append(foto)
+                break
+        # Tageseintrag: exaktes Datum
+        for eintrag in eintraege:
+            if eintrag.datum == foto.datum:
+                eintrag.fotos.append(foto)
+                break
+
+
 def _lade_eintraege(verzeichnis: Path, anreise_datum: date, abreise_datum: date) -> list[Tageseintrag]:
     tage_pfad = verzeichnis / "tage"
     if not tage_pfad.exists():
@@ -68,14 +121,13 @@ def _lade_eintraege(verzeichnis: Path, anreise_datum: date, abreise_datum: date)
     md = markdown.Markdown(extensions=["extra", "nl2br"])
 
     for datei in sorted(tage_pfad.glob("*.md")):
-        # Dateiname muss YYYY-MM-DD.md sein
         try:
             datum = date.fromisoformat(datei.stem)
         except ValueError:
-            continue  # Dateien mit anderem Namensformat ignorieren
+            continue
 
         if not (anreise_datum <= datum < abreise_datum):
-            continue  # Einträge außerhalb der Reise ignorieren
+            continue
 
         frontmatter, body = _parse_markdown_datei(datei)
 
@@ -222,6 +274,8 @@ def lade_reise(verzeichnis: Path) -> Reise:
         )
 
     eintraege = _lade_eintraege(verzeichnis, anreise.datum, abreise.datum)
+    fotos = _lade_fotos(verzeichnis)
+    _zuordnen_fotos(fotos, etappen, eintraege)
 
     return Reise(
         titel=titel,
@@ -230,6 +284,7 @@ def lade_reise(verzeichnis: Path) -> Reise:
         abreise=abreise,
         etappen=etappen,
         eintraege=eintraege,
+        fotos=fotos,
         deckbild=d.get("deckbild", ""),
         slug=verzeichnis.name,
     )

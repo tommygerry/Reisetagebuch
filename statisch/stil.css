@@ -387,3 +387,70 @@ footer a { color: var(--blau); }
   font-size: 0.9rem;
 }
 .nav-link:hover { color: #fff; }
+
+
+/* ── Fotogalerie ─────────────────────────────────────────────────── */
+
+.galerie-abschnitt {
+  margin-bottom: 2rem;
+}
+
+.galerie-ort {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--grau);
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.foto-gitter {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.foto-gitter--tag {
+  margin-bottom: 2rem;
+}
+
+.foto-kachel {
+  position: relative;
+  display: block;
+  border-radius: 6px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--hell);
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.foto-kachel:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  z-index: 1;
+}
+
+.foto-kachel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.foto-beschriftung {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 1.5rem 0.5rem 0.4rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.foto-kachel:hover .foto-beschriftung {
+  opacity: 1;
+}

@@ -41,8 +41,30 @@
         {% if eintrag.stimmung %}
         <span class="tag-meta-item">{{ eintrag.stimmung }}</span>
         {% endif %}
+        {% if eintrag.fotos %}
+        <span class="tag-meta-item">📷 {{ eintrag.fotos | length }} Foto{% if eintrag.fotos | length != 1 %}s{% endif %}</span>
+        {% endif %}
       </div>
     </header>
+
+    {% if eintrag.fotos %}
+    <div class="foto-gitter foto-gitter--tag">
+      {% for foto in eintrag.fotos %}
+      <a href="{{ site_root }}../{{ foto.pfad_relativ }}"
+         class="glightbox foto-kachel"
+         data-gallery="tag-galerie"
+         {% if foto.beschriftung %}data-description="{{ foto.beschriftung }}"{% endif %}
+         title="{{ foto.alt }}">
+        <img src="{{ site_root }}../{{ foto.pfad_relativ }}"
+             alt="{{ foto.alt }}"
+             loading="lazy">
+        {% if foto.beschriftung %}
+        <div class="foto-beschriftung">{{ foto.beschriftung }}</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <div class="tag-inhalt">
       {{ eintrag.inhalt_html | safe }}
@@ -54,4 +76,10 @@
   </article>
 
 </div>
+{% endblock %}
+
+{% block skripte %}
+<script>
+  GLightbox({ selector: '.glightbox' });
+</script>
 {% endblock %}
