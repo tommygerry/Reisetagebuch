@@ -1,0 +1,212 @@
+/* Reisetagebuch – Basis-Stylesheet */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --blau: #2c7be5;
+  --dunkel: #1a1a2e;
+  --grau: #6c757d;
+  --hell: #f8f9fa;
+  --rand: 1.5rem;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #212529;
+  background: #fff;
+}
+
+/* Navigation */
+.nav-leiste {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem var(--rand);
+  background: var(--dunkel);
+  color: #fff;
+}
+
+.nav-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+}
+
+.nav-logo:hover { text-decoration: underline; }
+
+.nav-trenner { color: #adb5bd; }
+
+.nav-aktuell { color: #adb5bd; font-size: 0.9rem; }
+
+/* Seitenbereich */
+.seite {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem var(--rand);
+}
+
+h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+h2 { font-size: 1.4rem; margin-top: 2rem; border-bottom: 2px solid var(--hell); padding-bottom: 0.4rem; }
+
+/* Übersichtsseite: Reisenkarten */
+.reisen-gitter {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.reise-karte {
+  display: block;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s, transform 0.2s;
+  overflow: hidden;
+}
+
+.reise-karte:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.reise-karte-inhalt {
+  padding: 1.25rem;
+}
+
+.reise-karte-inhalt h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  border: none;
+  padding: 0;
+}
+
+.reise-zeitraum {
+  color: var(--grau);
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+}
+
+.reise-meta {
+  font-size: 0.85rem;
+  color: var(--blau);
+  font-weight: 600;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.reise-beschreibung {
+  font-size: 0.9rem;
+  color: #495057;
+  margin: 0.5rem 0;
+}
+
+.etappen-liste-mini {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.etappen-liste-mini li {
+  background: var(--hell);
+  border-radius: 4px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+  color: #495057;
+}
+
+/* Einzelreise */
+.reise-kopf {
+  background: var(--hell);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.reise-zeitraum-gross {
+  font-size: 1rem;
+  color: #495057;
+  margin: 0 0 0.5rem;
+}
+
+.reise-kennzahlen {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.reise-kennzahlen strong {
+  color: var(--blau);
+  font-size: 1.2rem;
+}
+
+/* Karte */
+.karte {
+  width: 100%;
+  height: 420px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 1rem;
+}
+
+.etappen-tooltip {
+  background: rgba(44, 123, 229, 0.9);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Etappentabelle */
+.etappen-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.etappen-tabelle th {
+  background: var(--dunkel);
+  color: #fff;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.etappen-tabelle td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: top;
+}
+
+.etappen-tabelle tr:last-child td { border-bottom: none; }
+.etappen-tabelle tr:nth-child(even) td { background: var(--hell); }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--grau);
+  font-size: 0.85rem;
+  border-top: 1px solid #dee2e6;
+  margin-top: 3rem;
+}
+
+footer a { color: var(--blau); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .etappen-tabelle { font-size: 0.8rem; }
+  .etappen-tabelle th, .etappen-tabelle td { padding: 0.4rem 0.5rem; }
+  .karte { height: 300px; }
+}

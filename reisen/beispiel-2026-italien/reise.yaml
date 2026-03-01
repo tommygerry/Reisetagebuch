@@ -1,0 +1,41 @@
+titel: "Italien Rundreise 2026"
+beschreibung: "Drei Städte in neun Tagen – Rom, Florenz und Venedig mit dem Zug."
+deckbild: ""
+
+anreise:
+  datum: 2026-06-01
+  von: "München"
+  verkehrsmittel: "Flugzeug"
+
+abreise:
+  datum: 2026-06-09
+  nach: "München"
+  verkehrsmittel: "Flugzeug"
+
+etappen:
+  - ort: "Rom"
+    lat: 41.9028
+    lon: 12.4964
+    ankunft: 2026-06-01
+    naechte: 3
+    unterkunft: "Hotel Artemide, Via Nazionale 22"
+    verkehrsmittel_weiter: "Zug"
+    notizen: "Colosseum, Forum Romanum, Vatikan"
+
+  - ort: "Florenz"
+    lat: 43.7696
+    lon: 11.2558
+    ankunft: 2026-06-04
+    naechte: 2
+    unterkunft: "B&B La Signoria"
+    verkehrsmittel_weiter: "Zug"
+    notizen: "Dom, Uffizien, Ponte Vecchio"
+
+  - ort: "Venedig"
+    lat: 45.4408
+    lon: 12.3155
+    ankunft: 2026-06-06
+    naechte: 3
+    unterkunft: "Hotel Bucintoro, Riva San Biagio"
+    verkehrsmittel_weiter: "Flugzeug"
+    notizen: "Markusplatz, Dogenpalast, Gondel-Fahrt"

@@ -1,0 +1,40 @@
+{% extends "basis.html" %}
+
+{% block titel %}Alle Reisen – Reisetagebuch{% endblock %}
+
+{% block inhalt %}
+<div class="seite">
+  <h1>Meine Reisen</h1>
+
+  {% if reisen %}
+  <div class="reisen-gitter">
+    {% for reise in reisen %}
+    <a href="{{ reise.slug }}/index.html" class="reise-karte">
+      <div class="reise-karte-inhalt">
+        <h2>{{ reise.titel }}</h2>
+        <p class="reise-zeitraum">
+          {{ reise.anreise.datum.strftime('%d.%m.%Y') }} –
+          {{ reise.abreise.datum.strftime('%d.%m.%Y') }}
+        </p>
+        <p class="reise-meta">
+          {{ reise.gesamttage }} Tage &middot;
+          {{ reise.gesamtnaechte }} Nächte &middot;
+          {{ reise.etappen | length }} Etappen
+        </p>
+        {% if reise.beschreibung %}
+        <p class="reise-beschreibung">{{ reise.beschreibung }}</p>
+        {% endif %}
+        <ul class="etappen-liste-mini">
+          {% for etappe in reise.etappen %}
+          <li>{{ etappe.ort }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>Noch keine Reisen vorhanden. Lege eine <code>reise.yaml</code> im Verzeichnis <code>reisen/</code> an.</p>
+  {% endif %}
+</div>
+{% endblock %}

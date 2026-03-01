@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block titel %}Reisetagebuch{% endblock %}</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="{{ site_root }}statisch/stil.css">
+</head>
+<body>
+  <header>
+    <nav class="nav-leiste">
+      <a href="{{ site_root }}index.html" class="nav-logo">Reisetagebuch</a>
+      {% block nav_extra %}{% endblock %}
+    </nav>
+  </header>
+
+  <main>
+    {% block inhalt %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>Erstellt mit <a href="https://github.com/tommygerry/Reisetagebuch">Reisetagebuch</a></p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  {% block skripte %}{% endblock %}
+</body>
+</html>
