@@ -1,0 +1,35 @@
+name: Validate Trips
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - "reisen/**"
+      - "reisetagebuch/**"
+      - "vorlagen/**"
+      - "statisch/**"
+      - "requirements.txt"
+      - "main.py"
+
+jobs:
+  validate:
+    name: Validate & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.11 einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Alle Reisen validieren
+        run: python main.py validate
+
+      - name: Website bauen (Smoke-Test)
+        run: python main.py build

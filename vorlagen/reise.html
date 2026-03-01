@@ -1,0 +1,179 @@
+{% extends "basis.html" %}
+
+{% block titel %}{{ reise.titel }} – Reisetagebuch{% endblock %}
+
+{% block nav_extra %}
+<span class="nav-trenner">/</span>
+<span class="nav-aktuell">{{ reise.titel }}</span>
+{% endblock %}
+
+{% block inhalt %}
+<div class="seite">
+  <h1>{{ reise.titel }}</h1>
+
+  <div class="reise-kopf">
+    <div class="reise-kopf-info">
+      <p class="reise-zeitraum-gross">
+        {{ reise.anreise.datum.strftime('%d.%m.%Y') }}
+        {% if reise.anreise.von %} ab {{ reise.anreise.von }}{% endif %}
+        {% if reise.anreise.verkehrsmittel %} ({{ reise.anreise.verkehrsmittel }}){% endif %}
+        &rarr;
+        {{ reise.abreise.datum.strftime('%d.%m.%Y') }}
+        {% if reise.abreise.nach %} nach {{ reise.abreise.nach }}{% endif %}
+        {% if reise.abreise.verkehrsmittel %} ({{ reise.abreise.verkehrsmittel }}){% endif %}
+      </p>
+      <p class="reise-kennzahlen">
+        <strong>{{ reise.gesamttage }}</strong> Tage &nbsp;|&nbsp;
+        <strong>{{ reise.gesamtnaechte }}</strong> Nächte &nbsp;|&nbsp;
+        <strong>{{ reise.etappen | length }}</strong> Etappen
+        {% if reise.eintraege %}
+        &nbsp;|&nbsp; <strong>{{ reise.eintraege | length }}</strong> Tagebucheinträge
+        {% endif %}
+        {% if reise.fotos %}
+        &nbsp;|&nbsp; <strong>{{ reise.fotos | length }}</strong> Fotos
+        {% endif %}
+      </p>
+      {% if reise.beschreibung %}
+      <p class="reise-beschreibung">{{ reise.beschreibung }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <h2>Karte</h2>
+  <div id="karte" class="karte"></div>
+
+  <h2>Etappen</h2>
+  <table class="etappen-tabelle">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Ort</th>
+        <th>Ankunft</th>
+        <th>Abreise</th>
+        <th>Nächte</th>
+        <th>Unterkunft</th>
+        <th>Weiter mit</th>
+        <th>Notizen</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for etappe in reise.etappen %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><strong>{{ etappe.ort }}</strong></td>
+        <td>{{ etappe.ankunft.strftime('%d.%m.%Y') }}</td>
+        <td>{{ etappe.abreise.strftime('%d.%m.%Y') }}</td>
+        <td>{{ etappe.naechte }}</td>
+        <td>{{ etappe.unterkunft or '–' }}</td>
+        <td>{{ etappe.verkehrsmittel_weiter or '–' }}</td>
+        <td>{{ etappe.notizen or '–' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if reise.eintraege %}
+  <h2>Tagebuch</h2>
+  <div class="eintraege-liste">
+    {% for eintrag in reise.eintraege %}
+    <a href="tage/{{ eintrag.slug }}/index.html" class="eintrag-karte">
+      <div class="eintrag-datum">{{ eintrag.datum.strftime('%d.%m.') }}</div>
+      <div class="eintrag-inhalt">
+        <div class="eintrag-titel">{{ eintrag.titel }}</div>
+        <div class="eintrag-meta">
+          {% if eintrag.ort %}<span>📍 {{ eintrag.ort }}</span>{% endif %}
+          {% if eintrag.wetter %}<span>🌤 {{ eintrag.wetter }}</span>{% endif %}
+          {% if eintrag.stimmung %}<span>{{ eintrag.stimmung }}</span>{% endif %}
+          {% if eintrag.fotos %}<span>📷 {{ eintrag.fotos | length }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="eintrag-pfeil">&rarr;</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% set etappen_mit_fotos = reise.etappen | selectattr('fotos') | list %}
+  {% if etappen_mit_fotos %}
+  <h2>Fotogalerie</h2>
+  {% for etappe in etappen_mit_fotos %}
+  <div class="galerie-abschnitt">
+    <h3 class="galerie-ort">{{ etappe.ort }}</h3>
+    <div class="foto-gitter">
+      {% for foto in etappe.fotos %}
+      <a href="{{ foto.pfad_relativ }}"
+         class="glightbox foto-kachel"
+         data-gallery="galerie-{{ loop.revindex0 + loop.index }}"
+         data-gallery="galerie-{{ etappe.ort | lower | replace(' ', '-') }}"
+         {% if foto.beschriftung %}data-description="{{ foto.beschriftung }}"{% endif %}
+         title="{{ foto.alt }}">
+        <img src="{{ foto.pfad_relativ }}"
+             alt="{{ foto.alt }}"
+             loading="lazy">
+        {% if foto.beschriftung %}
+        <div class="foto-beschriftung">{{ foto.beschriftung }}</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block skripte %}
+<script>
+  const karte = L.map('karte');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18,
+  }).addTo(karte);
+
+  fetch('route.geojson')
+    .then(r => r.json())
+    .then(data => {
+      const grenzen = [];
+
+      data.features.forEach(feature => {
+        if (feature.geometry.type === 'LineString') {
+          const latlngs = feature.geometry.coordinates.map(c => [c[1], c[0]]);
+          L.polyline(latlngs, { color: '#2c7be5', weight: 3, dashArray: '6 4' }).addTo(karte);
+          latlngs.forEach(ll => grenzen.push(ll));
+
+        } else if (feature.geometry.type === 'Point') {
+          const [lon, lat] = feature.geometry.coordinates;
+          const p = feature.properties;
+          grenzen.push([lat, lon]);
+
+          const marker = L.circleMarker([lat, lon], {
+            radius: 10,
+            fillColor: '#2c7be5',
+            color: '#fff',
+            weight: 2,
+            fillOpacity: 1,
+          }).addTo(karte);
+
+          let popup = `<strong>${p.nummer}. ${p.ort}</strong><br>
+            ${p.ankunft} – ${p.abreise} (${p.naechte} Nacht/Nächte)`;
+          if (p.unterkunft) popup += `<br><em>${p.unterkunft}</em>`;
+          if (p.notizen)    popup += `<br>${p.notizen}`;
+          marker.bindPopup(popup);
+
+          marker.bindTooltip(`${p.nummer}. ${p.ort}`, {
+            permanent: true, direction: 'top', offset: [0, -10],
+            className: 'etappen-tooltip'
+          });
+        }
+      });
+
+      if (grenzen.length > 0) {
+        karte.fitBounds(grenzen, { padding: [40, 40] });
+      }
+    })
+    .catch(err => console.error('GeoJSON konnte nicht geladen werden:', err));
+
+  GLightbox({ selector: '.glightbox' });
+</script>
+{% endblock %}
