@@ -210,3 +210,180 @@ footer a { color: var(--blau); }
   .etappen-tabelle th, .etappen-tabelle td { padding: 0.4rem 0.5rem; }
   .karte { height: 300px; }
 }
+
+
+/* ── Tagebuchliste auf der Reiseseite ────────────────────────────── */
+
+.eintraege-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.eintrag-karte {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.eintrag-karte:hover {
+  background: var(--hell);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.eintrag-datum {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--blau);
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+.eintrag-inhalt { flex: 1; }
+
+.eintrag-titel {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.eintrag-meta {
+  font-size: 0.8rem;
+  color: var(--grau);
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.eintrag-pfeil {
+  color: #adb5bd;
+  font-size: 1.2rem;
+}
+
+/* ── Einzelner Tageseintrag ──────────────────────────────────────── */
+
+.tag-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.tag-nav-link {
+  font-size: 0.85rem;
+  color: var(--blau);
+  text-decoration: none;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  transition: background 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%;
+}
+
+.tag-nav-link:hover { background: var(--hell); }
+
+.tag-artikel {
+  max-width: 720px;
+}
+
+.tag-kopf {
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid var(--hell);
+}
+
+.tag-datum {
+  font-size: 0.9rem;
+  color: var(--grau);
+  margin: 0 0 0.25rem;
+  text-transform: capitalize;
+}
+
+.tag-kopf h1 {
+  margin: 0 0 0.75rem;
+}
+
+.tag-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.tag-meta-item {
+  background: var(--hell);
+  border-radius: 20px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+/* Markdown-Inhalt */
+.tag-inhalt {
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.tag-inhalt h2 { font-size: 1.25rem; margin-top: 1.75rem; }
+.tag-inhalt h3 { font-size: 1.1rem; margin-top: 1.5rem; }
+
+.tag-inhalt p { margin: 0 0 1rem; }
+
+.tag-inhalt blockquote {
+  border-left: 4px solid var(--blau);
+  margin: 1.25rem 0;
+  padding: 0.5rem 1.25rem;
+  background: var(--hell);
+  border-radius: 0 6px 6px 0;
+  color: #495057;
+  font-style: italic;
+}
+
+.tag-inhalt ul, .tag-inhalt ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.tag-inhalt li { margin-bottom: 0.25rem; }
+
+.tag-inhalt strong { color: #1a1a2e; }
+
+.tag-inhalt a { color: var(--blau); }
+
+.tag-inhalt hr {
+  border: none;
+  border-top: 1px solid #dee2e6;
+  margin: 1.5rem 0;
+}
+
+.tag-fuss {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.zurueck-link {
+  color: var(--blau);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.zurueck-link:hover { text-decoration: underline; }
+
+/* Nav-Link (für Breadcrumb auf Tagseite) */
+.nav-link {
+  color: #adb5bd;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.nav-link:hover { color: #fff; }

@@ -1,0 +1,57 @@
+{% extends "basis.html" %}
+
+{% block titel %}{{ eintrag.titel }} – {{ reise.titel }}{% endblock %}
+
+{% block nav_extra %}
+<span class="nav-trenner">/</span>
+<a href="{{ site_root }}../index.html" class="nav-link">{{ reise.titel }}</a>
+<span class="nav-trenner">/</span>
+<span class="nav-aktuell">{{ eintrag.datum.strftime('%d.%m.%Y') }}</span>
+{% endblock %}
+
+{% block inhalt %}
+<div class="seite">
+
+  <div class="tag-navigation">
+    {% if vorheriger %}
+    <a href="../{{ vorheriger.slug }}/index.html" class="tag-nav-link tag-nav-zurueck">
+      &larr; {{ vorheriger.datum.strftime('%d.%m.') }} {{ vorheriger.titel }}
+    </a>
+    {% else %}
+    <span></span>
+    {% endif %}
+    {% if naechster %}
+    <a href="../{{ naechster.slug }}/index.html" class="tag-nav-link tag-nav-weiter">
+      {{ naechster.datum.strftime('%d.%m.') }} {{ naechster.titel }} &rarr;
+    </a>
+    {% endif %}
+  </div>
+
+  <article class="tag-artikel">
+    <header class="tag-kopf">
+      <p class="tag-datum">{{ eintrag.datum.strftime('%A, %d. %B %Y') }}</p>
+      <h1>{{ eintrag.titel }}</h1>
+      <div class="tag-meta">
+        {% if eintrag.ort %}
+        <span class="tag-meta-item">📍 {{ eintrag.ort }}</span>
+        {% endif %}
+        {% if eintrag.wetter %}
+        <span class="tag-meta-item">🌤 {{ eintrag.wetter }}</span>
+        {% endif %}
+        {% if eintrag.stimmung %}
+        <span class="tag-meta-item">{{ eintrag.stimmung }}</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="tag-inhalt">
+      {{ eintrag.inhalt_html | safe }}
+    </div>
+
+    <footer class="tag-fuss">
+      <a href="{{ site_root }}../index.html" class="zurueck-link">&larr; Zurück zur Reise</a>
+    </footer>
+  </article>
+
+</div>
+{% endblock %}

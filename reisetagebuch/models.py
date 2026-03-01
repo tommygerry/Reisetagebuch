@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from typing import Optional
 
 
 @dataclass
@@ -34,14 +33,26 @@ class Etappe:
 
 
 @dataclass
+class Tageseintrag:
+    datum: date
+    titel: str
+    ort: str
+    inhalt_html: str           # gerendertes Markdown
+    wetter: str = ""
+    stimmung: str = ""         # z.B. "😊", "müde", "aufgeregt"
+    slug: str = ""             # YYYY-MM-DD, wird vom Loader gesetzt
+
+
+@dataclass
 class Reise:
     titel: str
     beschreibung: str
     anreise: Anreise
     abreise: Abreise
     etappen: list[Etappe] = field(default_factory=list)
+    eintraege: list[Tageseintrag] = field(default_factory=list)
     deckbild: str = ""
-    slug: str = ""          # Verzeichnisname, wird vom Loader gesetzt
+    slug: str = ""             # Verzeichnisname, wird vom Loader gesetzt
 
     @property
     def gesamtnaechte(self) -> int:

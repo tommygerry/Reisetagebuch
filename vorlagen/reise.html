@@ -26,6 +26,9 @@
         <strong>{{ reise.gesamttage }}</strong> Tage &nbsp;|&nbsp;
         <strong>{{ reise.gesamtnaechte }}</strong> Nächte &nbsp;|&nbsp;
         <strong>{{ reise.etappen | length }}</strong> Etappen
+        {% if reise.eintraege %}
+        &nbsp;|&nbsp; <strong>{{ reise.eintraege | length }}</strong> Tagebucheinträge
+        {% endif %}
       </p>
       {% if reise.beschreibung %}
       <p class="reise-beschreibung">{{ reise.beschreibung }}</p>
@@ -65,6 +68,27 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if reise.eintraege %}
+  <h2>Tagebuch</h2>
+  <div class="eintraege-liste">
+    {% for eintrag in reise.eintraege %}
+    <a href="tage/{{ eintrag.slug }}/index.html" class="eintrag-karte">
+      <div class="eintrag-datum">{{ eintrag.datum.strftime('%d.%m.') }}</div>
+      <div class="eintrag-inhalt">
+        <div class="eintrag-titel">{{ eintrag.titel }}</div>
+        <div class="eintrag-meta">
+          {% if eintrag.ort %}<span>📍 {{ eintrag.ort }}</span>{% endif %}
+          {% if eintrag.wetter %}<span>🌤 {{ eintrag.wetter }}</span>{% endif %}
+          {% if eintrag.stimmung %}<span>{{ eintrag.stimmung }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="eintrag-pfeil">&rarr;</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}
 

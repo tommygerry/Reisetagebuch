@@ -1,9 +1,10 @@
 from datetime import date, timedelta
 from pathlib import Path
 
+import markdown
 import yaml
 
-from .models import Anreise, Abreise, Etappe, Reise
+from .models import Anreise, Abreise, Etappe, Reise, Tageseintrag
 
 
 class ValidationFehler(Exception):
@@ -25,6 +26,74 @@ def _lade_yaml(pfad: Path) -> dict:
     if not isinstance(daten, dict):
         raise ValidationFehler(f"{pfad}: Ungültiges YAML-Format (erwartet ein Mapping)")
     return daten
+
+
+def _parse_markdown_datei(pfad: Path) -> tuple[dict, str]:
+    """Liest eine Markdown-Datei mit optionalem YAML-Frontmatter.
+
+    Format:
+        ---
+        titel: "Heute in Rom"
+        ort: "Rom"
+        wetter: "sonnig"
+        stimmung: "begeistert"
+        ---
+
+        Markdown-Text hier...
+
+    Gibt (frontmatter_dict, markdown_text) zurück.
+    """
+    text = pfad.read_text(encoding="utf-8")
+    frontmatter: dict = {}
+    body = text
+
+    if text.startswith("---"):
+        teile = text.split("---", 2)
+        if len(teile) >= 3:
+            try:
+                frontmatter = yaml.safe_load(teile[1]) or {}
+            except yaml.YAMLError:
+                frontmatter = {}
+            body = teile[2].lstrip("\n")
+
+    return frontmatter, body
+
+
+def _lade_eintraege(verzeichnis: Path, anreise_datum: date, abreise_datum: date) -> list[Tageseintrag]:
+    tage_pfad = verzeichnis / "tage"
+    if not tage_pfad.exists():
+        return []
+
+    eintraege: list[Tageseintrag] = []
+    md = markdown.Markdown(extensions=["extra", "nl2br"])
+
+    for datei in sorted(tage_pfad.glob("*.md")):
+        # Dateiname muss YYYY-MM-DD.md sein
+        try:
+            datum = date.fromisoformat(datei.stem)
+        except ValueError:
+            continue  # Dateien mit anderem Namensformat ignorieren
+
+        if not (anreise_datum <= datum < abreise_datum):
+            continue  # Einträge außerhalb der Reise ignorieren
+
+        frontmatter, body = _parse_markdown_datei(datei)
+
+        md.reset()
+        inhalt_html = md.convert(body)
+
+        eintrag = Tageseintrag(
+            datum=datum,
+            titel=str(frontmatter.get("titel", datum.strftime("%d.%m.%Y"))),
+            ort=str(frontmatter.get("ort", "")),
+            wetter=str(frontmatter.get("wetter", "")),
+            stimmung=str(frontmatter.get("stimmung", "")),
+            inhalt_html=inhalt_html,
+            slug=datei.stem,
+        )
+        eintraege.append(eintrag)
+
+    return eintraege
 
 
 def _parse_etappen(roh: list, anreise_datum: date) -> list[Etappe]:
@@ -60,7 +129,6 @@ def _parse_etappen(roh: list, anreise_datum: date) -> list[Etappe]:
         if naechte < 1:
             raise ValidationFehler(f"{nr}: 'naechte' muss mindestens 1 sein")
 
-        # Wenn abreise explizit angegeben: gegen naechte prüfen
         if "abreise" in e:
             abreise_angabe = _als_datum(e["abreise"], f"{nr}.abreise")
             erwartet = ankunft + timedelta(days=naechte)
@@ -82,7 +150,6 @@ def _parse_etappen(roh: list, anreise_datum: date) -> list[Etappe]:
         )
         etappen.append(etappe)
 
-        # Lückenfreiheit prüfen
         if i == 1:
             if ankunft != anreise_datum:
                 raise ValidationFehler(
@@ -112,7 +179,6 @@ def lade_reise(verzeichnis: Path) -> Reise:
     if not titel:
         raise ValidationFehler("Pflichtfeld 'titel' fehlt")
 
-    # Anreise
     anreise_roh = d.get("anreise")
     if not anreise_roh or "datum" not in anreise_roh:
         raise ValidationFehler("'anreise.datum' fehlt")
@@ -122,7 +188,6 @@ def lade_reise(verzeichnis: Path) -> Reise:
         verkehrsmittel=anreise_roh.get("verkehrsmittel", ""),
     )
 
-    # Abreise
     abreise_roh = d.get("abreise")
     if not abreise_roh or "datum" not in abreise_roh:
         raise ValidationFehler("'abreise.datum' fehlt")
@@ -137,21 +202,18 @@ def lade_reise(verzeichnis: Path) -> Reise:
             f"'abreise.datum' ({abreise.datum}) muss nach 'anreise.datum' ({anreise.datum}) liegen"
         )
 
-    # Etappen
     etappen_roh = d.get("etappen", [])
     if not etappen_roh:
         raise ValidationFehler("Mindestens eine Etappe muss definiert sein")
 
     etappen = _parse_etappen(etappen_roh, anreise.datum)
 
-    # Letzte Etappe muss am Abreisedatum enden
     if etappen[-1].abreise != abreise.datum:
         raise ValidationFehler(
             f"Letzte Etappe ({etappen[-1].ort}): Ende ({etappen[-1].abreise}) muss dem "
             f"Abreisedatum ({abreise.datum}) entsprechen"
         )
 
-    # Übernachtungssumme prüfen
     summe = sum(e.naechte for e in etappen)
     gesamt = (abreise.datum - anreise.datum).days
     if summe != gesamt:
@@ -159,12 +221,15 @@ def lade_reise(verzeichnis: Path) -> Reise:
             f"Summe der Übernachtungen ({summe}) ≠ Gesamtdauer ({gesamt} Nächte)"
         )
 
+    eintraege = _lade_eintraege(verzeichnis, anreise.datum, abreise.datum)
+
     return Reise(
         titel=titel,
         beschreibung=d.get("beschreibung", ""),
         anreise=anreise,
         abreise=abreise,
         etappen=etappen,
+        eintraege=eintraege,
         deckbild=d.get("deckbild", ""),
         slug=verzeichnis.name,
     )
