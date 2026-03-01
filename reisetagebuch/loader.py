@@ -1,3 +1,4 @@
+import math
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -6,13 +7,111 @@ import yaml
 
 from .models import Anreise, Abreise, Etappe, Foto, Reise, Tageseintrag
 
+try:
+    import exifread as _exifread
+    _EXIF_VERFUEGBAR = True
+except ImportError:
+    _EXIF_VERFUEGBAR = False
+
 
 class ValidationFehler(Exception):
     pass
 
 
-_BILD_ENDUNGEN = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif"}
+_BILD_ENDUNGEN = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".tiff", ".tif"}
 
+
+# ── EXIF-Hilfsfunktionen ─────────────────────────────────────────────
+
+def _exif_datum(tags: dict) -> date | None:
+    """Liest DateTimeOriginal aus EXIF-Tags. Format: 'YYYY:MM:DD HH:MM:SS'."""
+    tag = tags.get("EXIF DateTimeOriginal") or tags.get("Image DateTimeOriginal")
+    if tag is None:
+        return None
+    try:
+        teil = str(tag).split()[0]          # "YYYY:MM:DD"
+        return date.fromisoformat(teil.replace(":", "-"))
+    except (ValueError, IndexError):
+        return None
+
+
+def _rational_zu_grad(rationals) -> float:
+    """Konvertiert EXIF-RATIONAL-Liste [Grad, Min, Sek] → Dezimalgrad."""
+    def r2f(rational) -> float:
+        # exifread liefert entweder IfdTag-Werte oder Fraction-Objekte
+        try:
+            return float(rational.num) / float(rational.den)
+        except AttributeError:
+            return float(rational)
+
+    werte = list(rationals.values)
+    if len(werte) != 3:
+        return 0.0
+    grad, minute, sekunde = r2f(werte[0]), r2f(werte[1]), r2f(werte[2])
+    return grad + minute / 60.0 + sekunde / 3600.0
+
+
+def _exif_gps(tags: dict) -> tuple[float, float] | None:
+    """Liest GPS-Koordinaten aus EXIF. Gibt (lat, lon) zurück oder None."""
+    lat_tag = tags.get("GPS GPSLatitude")
+    lon_tag = tags.get("GPS GPSLongitude")
+    lat_ref = str(tags.get("GPS GPSLatitudeRef", "N"))
+    lon_ref = str(tags.get("GPS GPSLongitudeRef", "E"))
+
+    if lat_tag is None or lon_tag is None:
+        return None
+    try:
+        lat = _rational_zu_grad(lat_tag)
+        lon = _rational_zu_grad(lon_tag)
+        if "S" in lat_ref.upper():
+            lat = -lat
+        if "W" in lon_ref.upper():
+            lon = -lon
+        return lat, lon
+    except Exception:
+        return None
+
+
+def _lese_exif(pfad: Path) -> dict:
+    """Liest EXIF-Tags aus einer Bilddatei. Gibt leeres dict zurück bei Fehler."""
+    if not _EXIF_VERFUEGBAR:
+        return {}
+    try:
+        with pfad.open("rb") as f:
+            return _exifread.process_file(f, details=False, stop_tag="GPS GPSLongitude")
+    except Exception:
+        return {}
+
+
+# ── GPS-Proximity ─────────────────────────────────────────────────────
+
+_ERDDURCHMESSER_KM = 6371.0
+_MAX_ENTFERNUNG_KM = 80.0      # Fotos weiter als 80 km werden nicht zugeordnet
+
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Berechnet die Großkreis-Entfernung zwischen zwei Punkten in Kilometern."""
+    r = _ERDDURCHMESSER_KM
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return 2 * r * math.asin(math.sqrt(a))
+
+
+def _naechste_etappe(lat: float, lon: float, etappen: list[Etappe]) -> Etappe | None:
+    """Gibt die räumlich nächste Etappe zurück, wenn sie innerhalb des Schwellenwerts liegt."""
+    naechste, min_dist = None, float("inf")
+    for etappe in etappen:
+        dist = _haversine_km(lat, lon, etappe.lat, etappe.lon)
+        if dist < min_dist:
+            min_dist, naechste = dist, etappe
+    if naechste is not None and min_dist <= _MAX_ENTFERNUNG_KM:
+        return naechste
+    return None
+
+
+# ── Allgemeine Helfer ─────────────────────────────────────────────────
 
 def _als_datum(wert, feld: str) -> date:
     if isinstance(wert, date):
@@ -49,8 +148,10 @@ def _parse_markdown_datei(pfad: Path) -> tuple[dict, str]:
     return frontmatter, body
 
 
+# ── Fotos laden ───────────────────────────────────────────────────────
+
 def _lade_fotos(verzeichnis: Path) -> list[Foto]:
-    """Lädt alle Fotos aus reisen/<slug>/fotos/ mit optionaler fotos.yaml."""
+    """Lädt alle Fotos aus reisen/<slug>/fotos/ mit EXIF und optionaler fotos.yaml."""
     fotos_pfad = verzeichnis / "fotos"
     if not fotos_pfad.exists():
         return []
@@ -72,13 +173,27 @@ def _lade_fotos(verzeichnis: Path) -> list[Foto]:
         if datei.suffix.lower() not in _BILD_ENDUNGEN:
             continue
 
-        # Datum aus Dateinamen-Präfix extrahieren (YYYY-MM-DD_…)
+        # 1. EXIF lesen
+        exif_tags = _lese_exif(datei)
+        exif_datum = _exif_datum(exif_tags)
+        exif_gps   = _exif_gps(exif_tags)
+
+        # 2. Datum: EXIF hat Vorrang, Fallback auf Dateinamen-Präfix
         datum: date | None = None
-        if len(datei.stem) >= 10 and datei.stem[4] == "-" and datei.stem[7] == "-":
+        datum_quelle = ""
+        if exif_datum is not None:
+            datum = exif_datum
+            datum_quelle = "exif"
+        elif len(datei.stem) >= 10 and datei.stem[4] == "-" and datei.stem[7] == "-":
             try:
                 datum = date.fromisoformat(datei.stem[:10])
+                datum_quelle = "dateiname"
             except ValueError:
                 pass
+
+        # 3. GPS aus EXIF
+        lat = exif_gps[0] if exif_gps else None
+        lon = exif_gps[1] if exif_gps else None
 
         info = meta.get(datei.name, {})
         beschriftung = str(info.get("beschriftung", ""))
@@ -88,29 +203,47 @@ def _lade_fotos(verzeichnis: Path) -> list[Foto]:
             dateiname=datei.name,
             pfad_relativ=f"fotos/{datei.name}",
             datum=datum,
+            lat=lat,
+            lon=lon,
             beschriftung=beschriftung,
             alt=alt,
+            datum_quelle=datum_quelle,
         ))
 
     return fotos
 
 
 def _zuordnen_fotos(fotos: list[Foto], etappen: list[Etappe], eintraege: list[Tageseintrag]) -> None:
-    """Weist Fotos (in-place) den passenden Etappen und Tageseinträgen zu."""
-    for foto in fotos:
-        if foto.datum is None:
-            continue
-        # Etappe: ankunft <= foto.datum < abreise
-        for etappe in etappen:
-            if etappe.ankunft <= foto.datum < etappe.abreise:
-                etappe.fotos.append(foto)
-                break
-        # Tageseintrag: exaktes Datum
-        for eintrag in eintraege:
-            if eintrag.datum == foto.datum:
-                eintrag.fotos.append(foto)
-                break
+    """
+    Weist Fotos den Etappen und Tageseinträgen zu (in-place).
 
+    Priorität:
+    1. Datum (aus EXIF oder Dateiname) → Etappe nach Datumsbereich, Eintrag nach exaktem Datum
+    2. GPS-Koordinaten → nächste Etappe per Haversine-Distanz (nur wenn kein Datum verfügbar)
+    """
+    for foto in fotos:
+        etappe_gefunden = False
+
+        # Priorität 1: Datum-basierte Zuordnung
+        if foto.datum is not None:
+            for etappe in etappen:
+                if etappe.ankunft <= foto.datum < etappe.abreise:
+                    etappe.fotos.append(foto)
+                    etappe_gefunden = True
+                    break
+            for eintrag in eintraege:
+                if eintrag.datum == foto.datum:
+                    eintrag.fotos.append(foto)
+                    break
+
+        # Priorität 2: GPS-Proximity (nur wenn kein Datum gefunden)
+        if not etappe_gefunden and foto.lat is not None and foto.lon is not None:
+            naechste = _naechste_etappe(foto.lat, foto.lon, etappen)
+            if naechste is not None:
+                naechste.fotos.append(foto)
+
+
+# ── Einträge und Etappen laden ────────────────────────────────────────
 
 def _lade_eintraege(verzeichnis: Path, anreise_datum: date, abreise_datum: date) -> list[Tageseintrag]:
     tage_pfad = verzeichnis / "tage"

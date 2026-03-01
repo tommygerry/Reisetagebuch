@@ -20,9 +20,12 @@ class Abreise:
 class Foto:
     dateiname: str              # z.B. "2026-06-01_kolosseum.jpg"
     pfad_relativ: str           # z.B. "fotos/2026-06-01_kolosseum.jpg" (relativ zur Reise-Ausgabe)
-    datum: date | None = None   # aus Dateinamen-Präfix geparst
+    datum: date | None = None   # aus EXIF DateTimeOriginal oder Dateinamen-Präfix
+    lat: float | None = None    # aus EXIF GPS (Dezimalgrad)
+    lon: float | None = None    # aus EXIF GPS (Dezimalgrad)
     beschriftung: str = ""
     alt: str = ""               # Alternativtext; fallback = beschriftung oder dateiname
+    datum_quelle: str = ""      # "exif" | "dateiname" | ""
 
 
 @dataclass
