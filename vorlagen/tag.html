@@ -4,7 +4,7 @@
 
 {% block nav_extra %}
 <span class="nav-trenner">/</span>
-<a href="{{ site_root }}../index.html" class="nav-link">{{ reise.titel }}</a>
+<a href="../../index.html" class="nav-link">{{ reise.titel }}</a>
 <span class="nav-trenner">/</span>
 <span class="nav-aktuell">{{ eintrag.datum.strftime('%d.%m.%Y') }}</span>
 {% endblock %}
@@ -50,12 +50,12 @@
     {% if eintrag.fotos %}
     <div class="foto-gitter foto-gitter--tag">
       {% for foto in eintrag.fotos %}
-      <a href="{{ site_root }}../{{ foto.pfad_relativ }}"
+      <a href="../../{{ foto.pfad_relativ }}"
          class="glightbox foto-kachel"
          data-gallery="tag-galerie"
          {% if foto.beschriftung %}data-description="{{ foto.beschriftung }}"{% endif %}
          title="{{ foto.alt }}">
-        <img src="{{ site_root }}../{{ foto.pfad_relativ }}"
+        <img src="../../{{ foto.pfad_relativ }}"
              alt="{{ foto.alt }}"
              loading="lazy">
         {% if foto.beschriftung %}
@@ -71,7 +71,7 @@
     </div>
 
     <footer class="tag-fuss">
-      <a href="{{ site_root }}../index.html" class="zurueck-link">&larr; Zurück zur Reise</a>
+      <a href="../../index.html" class="zurueck-link">&larr; Zurück zur Reise</a>
     </footer>
   </article>
 

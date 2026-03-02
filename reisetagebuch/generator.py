@@ -66,7 +66,7 @@ def generiere_website(
                         eintrag=eintrag,
                         vorheriger=vorheriger,
                         naechster=naechster,
-                        site_root="../../",
+                        site_root="../../../",
                     ),
                     encoding="utf-8",
                 )
