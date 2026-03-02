@@ -1,0 +1,43 @@
+{% extends "basis.html" %}
+{% block titel %}Dashboard{% endblock %}
+
+{% block inhalt %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">Meine Reisen</h1>
+  <a href="/reisen/neu" class="btn btn-primary">+ Neue Reise</a>
+</div>
+
+{% if reisen %}
+<div class="row g-3">
+  {% for r in reisen %}
+  <div class="col-md-6 col-xl-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title mb-1">{{ r.titel }}</h5>
+        <p class="text-secondary small mb-2">
+          📁 {{ r.slug }}<br>
+          {% if r.anreise_datum %}
+          🗓 {{ r.anreise_datum }} → {{ r.abreise_datum }}<br>
+          {% endif %}
+          🗺 {{ r.etappen_anzahl }} Etappe{% if r.etappen_anzahl != 1 %}n{% endif %}
+        </p>
+      </div>
+      <div class="card-footer bg-white d-flex gap-2">
+        <a href="/reisen/{{ r.slug }}" class="btn btn-sm btn-outline-primary">Öffnen</a>
+        <a href="/reisen/{{ r.slug }}/bearbeiten" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card text-center py-5">
+  <div class="card-body">
+    <p class="display-6 mb-2">✈</p>
+    <h5>Noch keine Reisen angelegt</h5>
+    <p class="text-secondary">Leg deine erste Reise an und fange an zu schreiben.</p>
+    <a href="/reisen/neu" class="btn btn-primary">Erste Reise anlegen</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

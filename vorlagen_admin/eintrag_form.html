@@ -1,0 +1,99 @@
+{% extends "basis.html" %}
+{% block titel %}{{ 'Neuer Eintrag' if neu else 'Eintrag bearbeiten' }} – {{ slug }}{% endblock %}
+
+{% block inhalt %}
+<div class="d-flex align-items-center mb-4 gap-3">
+  <a href="/reisen/{{ slug }}" class="btn btn-sm btn-outline-secondary">← Zurück</a>
+  <h1 class="h3 mb-0">
+    {% if neu %}Neuer Tageseintrag{% else %}Eintrag {{ datum }} bearbeiten{% endif %}
+  </h1>
+</div>
+
+<form method="post">
+
+  <!-- ── Metadaten ─────────────────────────────────────────────── -->
+  <div class="card mb-4">
+    <div class="card-header">📋 Metadaten</div>
+    <div class="card-body row g-3">
+
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">
+          Datum <span class="text-danger">*</span>
+        </label>
+        <input type="date" name="datum" class="form-control" required
+               {% if not neu %}readonly{% endif %}
+               value="{{ eintrag.get('datum', '') }}">
+        {% if not neu %}
+        <small class="text-secondary">Datum kann nicht geändert werden (Dateiname).</small>
+        {% endif %}
+      </div>
+
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Titel</label>
+        <input type="text" name="titel" class="form-control"
+               placeholder="z.B. Ankunft in Rom"
+               value="{{ eintrag.get('titel', '') }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Ort</label>
+        <input type="text" name="ort" class="form-control"
+               placeholder="z.B. Rom"
+               value="{{ eintrag.get('ort', '') }}">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Wetter</label>
+        <input type="text" name="wetter" class="form-control"
+               placeholder="z.B. sonnig, 28 °C"
+               value="{{ eintrag.get('wetter', '') }}">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Stimmung</label>
+        <input type="text" name="stimmung" class="form-control"
+               placeholder="z.B. 😊 begeistert"
+               value="{{ eintrag.get('stimmung', '') }}">
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Inhalt (Markdown) ──────────────────────────────────────── -->
+  <div class="card mb-4">
+    <div class="card-header">✍ Tagebucheintrag (Markdown)</div>
+    <div class="card-body">
+      <textarea id="inhalt-editor" name="inhalt">{{ eintrag.get('inhalt', '') }}</textarea>
+    </div>
+  </div>
+
+  <!-- ── Aktionen ──────────────────────────────────────────────── -->
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary px-4">💾 Speichern</button>
+    <a href="/reisen/{{ slug }}" class="btn btn-outline-secondary">Abbrechen</a>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block skripte %}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+  new EasyMDE({
+    element: document.getElementById('inhalt-editor'),
+    spellChecker: false,
+    autosave: { enabled: true, uniqueId: 'eintrag-{{ slug }}-{{ eintrag.get("datum", "neu") }}' },
+    toolbar: [
+      'bold', 'italic', 'heading', '|',
+      'quote', 'unordered-list', 'ordered-list', '|',
+      'link', 'image', '|',
+      'preview', 'side-by-side', 'fullscreen', '|',
+      'guide'
+    ],
+    placeholder: 'Hier den Tagebucheintrag eingeben …',
+    minHeight: '300px',
+  });
+</script>
+{% endblock %}

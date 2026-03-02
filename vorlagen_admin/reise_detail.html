@@ -1,0 +1,84 @@
+{% extends "basis.html" %}
+{% block titel %}{{ daten.titel or slug }}{% endblock %}
+
+{% block inhalt %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="h3 mb-1">{{ daten.titel or slug }}</h1>
+    <p class="text-secondary small mb-0">📁 reisen/{{ slug }}</p>
+  </div>
+  <a href="/reisen/{{ slug }}/bearbeiten" class="btn btn-outline-secondary btn-sm">✏ Reisedaten bearbeiten</a>
+</div>
+
+<div class="row g-4">
+
+  <!-- Tageseinträge -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>📝 Tageseinträge ({{ eintraege|length }})</span>
+        <a href="/reisen/{{ slug }}/eintraege/neu" class="btn btn-sm btn-primary">+ Neuer Eintrag</a>
+      </div>
+      <div class="card-body p-0">
+        {% if eintraege %}
+        <ul class="list-group list-group-flush">
+          {% for datum in eintraege %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>📅 {{ datum }}</span>
+            <div class="d-flex gap-2">
+              <a href="/reisen/{{ slug }}/eintraege/{{ datum }}/bearbeiten"
+                 class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+              <form method="post" action="/reisen/{{ slug }}/eintraege/{{ datum }}/loeschen"
+                    onsubmit="return confirm('Eintrag {{ datum }} löschen?')">
+                <button class="btn btn-sm btn-outline-danger">✕</button>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-secondary p-3 mb-0">Noch keine Einträge.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Fotos -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">📷 Fotos ({{ fotos|length }})</div>
+      <div class="card-body">
+        <form method="post" action="/reisen/{{ slug }}/fotos" enctype="multipart/form-data" class="mb-3">
+          <div class="input-group">
+            <input type="file" name="fotos" class="form-control form-control-sm"
+                   accept="image/*" multiple>
+            <button class="btn btn-sm btn-primary">Hochladen</button>
+          </div>
+          <small class="text-secondary">Mehrere Dateien gleichzeitig möglich. EXIF wird automatisch ausgelesen.</small>
+        </form>
+
+        {% if fotos %}
+        <div class="row g-2">
+          {% for foto in fotos %}
+          <div class="col-4 position-relative">
+            <img src="/foto/{{ slug }}/{{ foto }}" class="img-fluid rounded"
+                 style="aspect-ratio:4/3;object-fit:cover;width:100%"
+                 alt="{{ foto }}" title="{{ foto }}">
+            <form method="post" action="/reisen/{{ slug }}/fotos/{{ foto }}/loeschen"
+                  class="position-absolute top-0 end-0 m-1"
+                  onsubmit="return confirm('{{ foto }} löschen?')">
+              <button class="btn btn-sm btn-danger py-0 px-1" style="font-size:.7rem">✕</button>
+            </form>
+            <div class="small text-truncate text-secondary mt-1" style="font-size:.7rem">{{ foto }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-secondary mb-0">Noch keine Fotos.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

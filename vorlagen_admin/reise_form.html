@@ -1,0 +1,245 @@
+{% extends "basis.html" %}
+{% block titel %}{{ 'Neue Reise' if neu else 'Reise bearbeiten' }}{% endblock %}
+
+{% block inhalt %}
+<div class="d-flex align-items-center mb-4 gap-3">
+  <a href="{{ '/' if neu else '/reisen/' + slug }}" class="btn btn-sm btn-outline-secondary">← Zurück</a>
+  <h1 class="h3 mb-0">{{ 'Neue Reise anlegen' if neu else 'Reise bearbeiten' }}</h1>
+</div>
+
+{% set an = reise.get('anreise', {}) %}
+{% set ab = reise.get('abreise', {}) %}
+{% set anreise_datum_val  = an.get('datum', '')           or reise.get('anreise_datum', '') %}
+{% set anreise_von_val    = an.get('von', '')             or reise.get('anreise_von', '') %}
+{% set anreise_vm_val     = an.get('verkehrsmittel', '')  or reise.get('anreise_vm', '') %}
+{% set abreise_datum_val  = ab.get('datum', '')           or reise.get('abreise_datum', '') %}
+{% set abreise_nach_val   = ab.get('nach', '')            or reise.get('abreise_nach', '') %}
+{% set abreise_vm_val     = ab.get('verkehrsmittel', '')  or reise.get('abreise_vm', '') %}
+
+<form method="post" class="row g-4">
+
+  <!-- ── Grunddaten ──────────────────────────────────────────────── -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">📋 Grunddaten</div>
+      <div class="card-body row g-3">
+
+        {% if neu %}
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">
+            Verzeichnisname (Slug) <span class="text-danger">*</span>
+          </label>
+          <input type="text" name="slug" class="form-control" required
+                 placeholder="z.B. italien-2026"
+                 value="{{ reise.get('slug', '') }}">
+          <small class="text-secondary">Nur Kleinbuchstaben, Ziffern und Bindestriche.</small>
+        </div>
+        {% endif %}
+
+        <div class="col-md-{% if neu %}7{% else %}12{% endif %}">
+          <label class="form-label fw-semibold">
+            Titel <span class="text-danger">*</span>
+          </label>
+          <input type="text" name="titel" class="form-control" required
+                 value="{{ reise.get('titel', '') }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-semibold">Beschreibung</label>
+          <textarea name="beschreibung" class="form-control" rows="2">{{ reise.get('beschreibung', '') }}</textarea>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Anreise & Abreise ──────────────────────────────────────── -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">✈ Anreise</div>
+      <div class="card-body row g-3">
+
+        <div class="col-12">
+          <label class="form-label">Datum</label>
+          <input type="date" name="anreise_datum" class="form-control"
+                 value="{{ anreise_datum_val }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Von</label>
+          <input type="text" name="anreise_von" class="form-control"
+                 placeholder="z.B. München"
+                 value="{{ anreise_von_val }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Verkehrsmittel</label>
+          <select name="anreise_vm" class="form-select">
+            {% for vm in ['', 'Flugzeug', 'Zug', 'Auto', 'Bus', 'Schiff', 'Fähre'] %}
+            <option value="{{ vm }}" {% if anreise_vm_val == vm %}selected{% endif %}>
+              {{ vm if vm else '– bitte wählen –' }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">🏠 Abreise</div>
+      <div class="card-body row g-3">
+
+        <div class="col-12">
+          <label class="form-label">Datum</label>
+          <input type="date" name="abreise_datum" class="form-control"
+                 value="{{ abreise_datum_val }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Nach</label>
+          <input type="text" name="abreise_nach" class="form-control"
+                 placeholder="z.B. München"
+                 value="{{ abreise_nach_val }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Verkehrsmittel</label>
+          <select name="abreise_vm" class="form-select">
+            {% for vm in ['', 'Flugzeug', 'Zug', 'Auto', 'Bus', 'Schiff', 'Fähre'] %}
+            <option value="{{ vm }}" {% if abreise_vm_val == vm %}selected{% endif %}>
+              {{ vm if vm else '– bitte wählen –' }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Etappen ────────────────────────────────────────────────── -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>📍 Etappen</span>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                onclick="etappeHinzufuegen()">+ Etappe hinzufügen</button>
+      </div>
+      <div class="card-body">
+        <div id="etappen-container"></div>
+        <p id="keine-etappen" class="text-secondary mb-0">
+          Noch keine Etappen. Klicken Sie auf „+ Etappe hinzufügen".
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Speichern ──────────────────────────────────────────────── -->
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary px-4">💾 Speichern</button>
+    <a href="{{ '/' if neu else '/reisen/' + slug }}"
+       class="btn btn-outline-secondary ms-2">Abbrechen</a>
+  </div>
+
+</form>
+{% endblock %}
+
+{% block skripte %}
+<script>
+// Initiale Etappen aus YAML (Daten bereits als Strings normalisiert)
+const initEtappen = [
+  {%- for e in reise.get('etappen', []) %}
+  {
+    ort:  {{ e.get('ort', '')  | tojson }},
+    lat:  {{ e.get('lat', '')  | tojson }},
+    lon:  {{ e.get('lon', '')  | tojson }},
+    ankunft: {{ e.get('ankunft', '') | string | tojson }},
+    naechte: {{ e.get('naechte', 1) | int }},
+    unterkunft:          {{ e.get('unterkunft', '')           | tojson }},
+    verkehrsmittel_weiter: {{ e.get('verkehrsmittel_weiter', '') | tojson }},
+    notizen:             {{ e.get('notizen', '')              | tojson }}
+  }{{ "," if not loop.last }}
+  {%- endfor %}
+];
+
+const VERKEHRSMITTEL = ['', 'Flugzeug', 'Zug', 'Auto', 'Bus', 'Schiff', 'Fähre'];
+let naechsterIndex = 0;
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function vmOptionen(selected) {
+  return VERKEHRSMITTEL.map(vm =>
+    `<option value="${esc(vm)}"${vm === selected ? ' selected' : ''}>` +
+    `${vm || '– Weiter mit –'}</option>`
+  ).join('');
+}
+
+function etappeHinzufuegen(e = {}) {
+  const i = naechsterIndex++;
+  const html = `
+  <div class="border rounded p-3 mb-3 position-relative" id="etappe-${i}">
+    <button type="button" class="btn-close position-absolute top-0 end-0 m-2"
+            onclick="etappeEntfernen(${i})" title="Etappe entfernen"></button>
+    <div class="fw-semibold text-secondary small mb-2">Etappe ${i + 1}</div>
+    <div class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label form-label-sm">Ort <span class="text-danger">*</span></label>
+        <input type="text" name="etappe_${i}_ort" class="form-control form-control-sm"
+               required placeholder="z.B. Rom" value="${esc(e.ort)}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm">Breitengrad</label>
+        <input type="number" name="etappe_${i}_lat" class="form-control form-control-sm"
+               step="0.0001" placeholder="41.9028" value="${esc(e.lat)}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm">Längengrad</label>
+        <input type="number" name="etappe_${i}_lon" class="form-control form-control-sm"
+               step="0.0001" placeholder="12.4964" value="${esc(e.lon)}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm">Ankunft</label>
+        <input type="date" name="etappe_${i}_ankunft" class="form-control form-control-sm"
+               value="${esc(e.ankunft)}">
+      </div>
+      <div class="col-md-1">
+        <label class="form-label form-label-sm">Nächte</label>
+        <input type="number" name="etappe_${i}_naechte" class="form-control form-control-sm"
+               min="1" value="${e.naechte ?? 1}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label form-label-sm">Weiter mit</label>
+        <select name="etappe_${i}_verkehrsmittel_weiter" class="form-select form-select-sm">
+          ${vmOptionen(e.verkehrsmittel_weiter || '')}
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label form-label-sm">Unterkunft</label>
+        <input type="text" name="etappe_${i}_unterkunft" class="form-control form-control-sm"
+               placeholder="Hotelname" value="${esc(e.unterkunft)}">
+      </div>
+      <div class="col-md-5">
+        <label class="form-label form-label-sm">Notizen</label>
+        <input type="text" name="etappe_${i}_notizen" class="form-control form-control-sm"
+               placeholder="Highlights …" value="${esc(e.notizen)}">
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('etappen-container').insertAdjacentHTML('beforeend', html);
+  document.getElementById('keine-etappen').style.display = 'none';
+}
+
+function etappeEntfernen(i) {
+  document.getElementById(`etappe-${i}`)?.remove();
+  if (!document.getElementById('etappen-container').children.length) {
+    document.getElementById('keine-etappen').style.display = '';
+  }
+}
+
+// Beim Laden vorhandene Etappen rendern
+initEtappen.forEach(e => etappeHinzufuegen(e));
+</script>
+{% endblock %}
