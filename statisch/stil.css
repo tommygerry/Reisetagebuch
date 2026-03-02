@@ -294,24 +294,21 @@ footer a { color: var(--blau); }
 .tag-nav-link:hover { background: var(--hell); }
 
 .tag-artikel {
-  max-width: 720px;
+  /* volle Breite wie Reise- und Übersichtsseite */
 }
 
 .tag-kopf {
-  margin-bottom: 2rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 2px solid var(--hell);
+  background: var(--hell);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0 1.5rem;
 }
 
 .tag-datum {
   font-size: 0.9rem;
   color: var(--grau);
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.5rem;
   text-transform: capitalize;
-}
-
-.tag-kopf h1 {
-  margin: 0 0 0.75rem;
 }
 
 .tag-meta {

@@ -28,9 +28,10 @@
   </div>
 
   <article class="tag-artikel">
+    <h1>{{ eintrag.titel }}</h1>
+
     <header class="tag-kopf">
       <p class="tag-datum">{{ eintrag.datum.strftime('%A, %d. %B %Y') }}</p>
-      <h1>{{ eintrag.titel }}</h1>
       <div class="tag-meta">
         {% if eintrag.ort %}
         <span class="tag-meta-item">📍 {{ eintrag.ort }}</span>
@@ -48,6 +49,7 @@
     </header>
 
     {% if eintrag.fotos %}
+    <h2>Fotos</h2>
     <div class="foto-gitter foto-gitter--tag">
       {% for foto in eintrag.fotos %}
       <a href="../../{{ foto.pfad_relativ }}"
